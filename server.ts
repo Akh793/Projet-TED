@@ -1,4 +1,4 @@
-import express from "express";
+import * as express from "express";
 import cors from "cors";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -53,3 +53,4 @@ app.post("/messages", async (req, res) => {
 
 const PORT = Number(process.env.PORT || 8080);
 app.listen(PORT, () => console.log(`MCP server on :${PORT}/sse`));
+
