@@ -5,7 +5,9 @@
     "outDir": "dist",
     "moduleResolution": "bundler",
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "lib": ["ES2022"],
+    "types": ["node"]
   },
   "include": ["server.ts"]
 }
