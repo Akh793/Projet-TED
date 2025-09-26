@@ -1,17 +1,12 @@
-import expressPkg from "express";
-import cors from "cors";
+import http from "http";
+import { URL } from "url";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 
-const express = (expressPkg as unknown as typeof import("express")).default || expressPkg;
-const app = express();
-
-app.use(express.json());
-app.use(cors({ origin: "*" }));
-
 const mcp = new McpServer({ name: "ted-mcp", version: "1.0.0" });
 
+// -------- Tool: ted_search --------
 mcp.tool(
   "ted_search",
   "Recherche d'avis TED (tedeuropa) via expert query",
@@ -48,24 +43,59 @@ mcp.tool(
   }
 );
 
-// ---- Wiring HTTP/SSE pour MCP ----
+// -------- HTTP server (sans Express) --------
 const transports = new Map<string, SSEServerTransport>();
 
-app.get("/sse", async (_req, res) => {
-  const transport = new SSEServerTransport("/messages", res);
-  transports.set(transport.sessionId, transport);
-  res.on("close", () => transports.delete(transport.sessionId));
-  await mcp.connect(transport);
-});
+const server = http.createServer(async (req, res) => {
+  // CORS basique
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 
-app.post("/messages", async (req, res) => {
-  const sid = String(req.query.sessionId || "");
-  const t = transports.get(sid);
-  if (!t) return res.status(400).send("invalid sessionId");
-  await t.handlePostMessage(req, res, req.body);
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    return res.end();
+  }
+
+  const url = new URL(req.url || "/", `http://${req.headers.host}`);
+
+  // SSE endpoint
+  if (url.pathname === "/sse" && req.method === "GET") {
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive"
+    });
+    const transport = new SSEServerTransport("/messages", res as any);
+    transports.set(transport.sessionId, transport);
+    req.on("close", () => transports.delete(transport.sessionId));
+    await mcp.connect(transport);
+    return;
+  }
+
+  // Messages endpoint
+  if (url.pathname === "/messages" && req.method === "POST") {
+    const sid = url.searchParams.get("sessionId") || "";
+    const t = transports.get(sid);
+    if (!t) {
+      res.statusCode = 400;
+      return res.end("invalid sessionId");
+    }
+    // Lire le body JSON
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk as Buffer);
+    const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {};
+    await t.handlePostMessage(req as any, res as any, body);
+    return;
+  }
+
+  // Fallback
+  res.statusCode = 404;
+  res.end("Not found");
 });
 
 const PORT = Number(process.env.PORT || 8080);
-app.listen(PORT, () => {
+server.listen(PORT, () => {
+  // eslint-disable-next-line no-console
   console.log(`MCP server on :${PORT}/sse`);
 });
