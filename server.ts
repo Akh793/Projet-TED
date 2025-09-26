@@ -1,8 +1,8 @@
-import express = require("express");
-import cors = require("cors");
+import express from "express";
+import cors from "cors";
 import { z } from "zod";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 
 const app = express();
 app.use(express.json());
