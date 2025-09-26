@@ -32,7 +32,7 @@ mcp.tool(
       return { content: [{ type: "text", text: `TED error ${r.status}: ${t}` }] };
     }
     const json = await r.json();
-    return { content: [{ type: "json", json }] };
+    return { content: [{ type: "text", text: JSON.stringify(json, null, 2) }] };
   }
 );
 
@@ -53,4 +53,5 @@ app.post("/messages", async (req, res) => {
 
 const PORT = Number(process.env.PORT || 8080);
 app.listen(PORT, () => console.log(`MCP server on :${PORT}/sse`));
+
 
