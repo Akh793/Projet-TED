@@ -1,5 +1,5 @@
-import express from "express";
-import cors from "cors";
+import express = require("express");
+import cors = require("cors");
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse";
@@ -65,6 +65,5 @@ app.post("/messages", async (req, res) => {
 
 const PORT = Number(process.env.PORT || 8080);
 app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
   console.log(`MCP server on :${PORT}/sse`);
 });
