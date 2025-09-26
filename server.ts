@@ -1,5 +1,5 @@
-import http from "http";
-import { URL } from "url";
+import * as http from "http";
+import * as url from "url";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
@@ -57,10 +57,10 @@ const server = http.createServer(async (req, res) => {
     return res.end();
   }
 
-  const url = new URL(req.url || "/", `http://${req.headers.host}`);
+  const parsedUrl = new url.URL(req.url || "/", `http://${req.headers.host}`);
 
   // SSE endpoint
-  if (url.pathname === "/sse" && req.method === "GET") {
+  if (parsedUrl.pathname === "/sse" && req.method === "GET") {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
@@ -74,8 +74,8 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Messages endpoint
-  if (url.pathname === "/messages" && req.method === "POST") {
-    const sid = url.searchParams.get("sessionId") || "";
+  if (parsedUrl.pathname === "/messages" && req.method === "POST") {
+    const sid = parsedUrl.searchParams.get("sessionId") || "";
     const t = transports.get(sid);
     if (!t) {
       res.statusCode = 400;
@@ -96,6 +96,5 @@ const server = http.createServer(async (req, res) => {
 
 const PORT = Number(process.env.PORT || 8080);
 server.listen(PORT, () => {
-  // eslint-disable-next-line no-console
   console.log(`MCP server on :${PORT}/sse`);
 });
