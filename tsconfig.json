@@ -5,7 +5,6 @@
     "outDir": "dist",
     "moduleResolution": "node",
     "strict": true,
-    "esModuleInterop": true,    // <-- ligne clé
     "skipLibCheck": true
   },
   "include": ["server.ts"]
