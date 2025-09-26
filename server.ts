@@ -6,7 +6,7 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 
 const mcp = new McpServer({ name: "ted-mcp", version: "1.0.0" });
 
-// -------- Tool: ted_search --------
+// Tool: TED search
 mcp.tool(
   "ted_search",
   "Recherche d'avis TED (tedeuropa) via expert query",
@@ -43,24 +43,17 @@ mcp.tool(
   }
 );
 
-// -------- HTTP server (sans Express) --------
+// HTTP server sans Express
 const transports = new Map<string, SSEServerTransport>();
-
 const server = http.createServer(async (req, res) => {
-  // CORS basique
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  if (req.method === "OPTIONS") { res.statusCode = 204; return res.end(); }
 
-  if (req.method === "OPTIONS") {
-    res.statusCode = 204;
-    return res.end();
-  }
+  const u = new url.URL(req.url || "/", `http://${req.headers.host}`);
 
-  const parsedUrl = new url.URL(req.url || "/", `http://${req.headers.host}`);
-
-  // SSE endpoint
-  if (parsedUrl.pathname === "/sse" && req.method === "GET") {
+  if (u.pathname === "/sse" && req.method === "GET") {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
@@ -73,15 +66,10 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Messages endpoint
-  if (parsedUrl.pathname === "/messages" && req.method === "POST") {
-    const sid = parsedUrl.searchParams.get("sessionId") || "";
+  if (u.pathname === "/messages" && req.method === "POST") {
+    const sid = u.searchParams.get("sessionId") || "";
     const t = transports.get(sid);
-    if (!t) {
-      res.statusCode = 400;
-      return res.end("invalid sessionId");
-    }
-    // Lire le body JSON
+    if (!t) { res.statusCode = 400; return res.end("invalid sessionId"); }
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(chunk as Buffer);
     const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {};
@@ -89,12 +77,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Fallback
   res.statusCode = 404;
   res.end("Not found");
 });
 
 const PORT = Number(process.env.PORT || 8080);
-server.listen(PORT, () => {
-  console.log(`MCP server on :${PORT}/sse`);
-});
+server.listen(PORT, () => console.log(`MCP server on :${PORT}/sse`));
