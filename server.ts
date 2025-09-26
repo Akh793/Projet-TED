@@ -1,10 +1,12 @@
-import express from "express";
+import expressPkg from "express";
 import cors from "cors";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 
+const express = (expressPkg as unknown as typeof import("express")).default || expressPkg;
 const app = express();
+
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 
